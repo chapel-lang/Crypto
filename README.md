@@ -10,7 +10,7 @@ This module provides a cryptographic library based on
 Add Crypto as a Mason dependency:
 
 ```bash
-mason add Crypto@0.1.0
+mason add Crypto@0.2.0
 ```
 
 ## Usage

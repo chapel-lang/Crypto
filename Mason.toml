@@ -1,7 +1,6 @@
-
 [brick]
 name = "Crypto"
-version = "0.1.0"
+version = "0.2.0"
 chplVersion = "2.7.0"
 type = "library"
 source = "https://github.com/chapel-lang/Crypto"
@@ -10,6 +9,5 @@ copyrightYear = "2004"
 license = "Apache-2.0"
 
 [dependencies]
-
 [system]
 openssl = "*"
