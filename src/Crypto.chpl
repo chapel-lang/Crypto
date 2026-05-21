@@ -574,10 +574,9 @@ module Crypto {
 
        Initialization example,
 
-       .. literalinclude:: ../../../../test/library/packages/Crypto/doc-examples/CryptoExamples.chpl
-          :language: chapel
-          :start-after: START_EXAMPLE_0
-          :end-before: STOP_EXAMPLE_0
+       .. code-block:: chapel
+
+          var h = new Hash(Digest.SHA256);
     */
     proc init(digestName: Digest) {
       init this;
@@ -790,10 +789,9 @@ module Crypto {
 
        Initialization example,
 
-       .. literalinclude:: ../../../../test/library/packages/Crypto/doc-examples/CryptoExamples.chpl
-          :language: chapel
-          :start-after: START_EXAMPLE_1
-          :end-before: STOP_EXAMPLE_1
+       .. code-block:: chapel
+
+          var aes = new AES(256, CryptoChainMode.cbc);
     */
     proc init(bits: int, mode: CryptoChainMode) {
       var tmpCipher: CONST_EVP_CIPHER_PTR;
@@ -987,10 +985,9 @@ module Crypto {
        desired number of random values as specified by the argument. Halts for
        number of bytes less than 1 (invalid). For instance:
 
-       .. literalinclude:: ../../../../test/library/packages/Crypto/doc-examples/CryptoGetRandomBuffer.chpl
-          :language: chapel
-          :start-after: START_EXAMPLE
-          :end-before: STOP_EXAMPLE
+       .. code-block:: chapel
+
+          var a = (new CryptoRandom()).getRandomBuffer(5);
 
        would give us a `CryptoBuffer` of size `5` and pre-initialized with
        values.
@@ -1014,6 +1011,7 @@ module Crypto {
     }
   }
 
+  @chplcheck.ignore("CamelCaseFunctions")
   @chpldoc.nodoc
   proc PBKDF2(userKey: string, saltBuff: CryptoBuffer,
               byteLen: int, iterCount: int, digestName: string) {
@@ -1058,8 +1056,8 @@ module Crypto {
 
        :arg iterCount: The iteration count used by OpenSSL to repeat the
                        `Update` primitive. Min. recommended value = 1000.
-                        Greater the `iterCount`, greater the security of the
-                        key.
+                       Greater the `iterCount`, greater the security of the
+                       key.
        :type iterCount: `int`
 
        :arg digest: An object of class 'Hash'. This decides the Hashing function
@@ -1294,6 +1292,7 @@ module Crypto {
     `C_OpenSSL documentation <https://www.openssl.org/docs/manmaster/man3/>`_
     of the reference version for the usage of this module.
   */
+  @chplcheck.ignore("PascalCaseModules")
   module C_OpenSSL {
     // The RSA module include needs special treatment since it uses
     // I as an argument even though Chapel will have already included
