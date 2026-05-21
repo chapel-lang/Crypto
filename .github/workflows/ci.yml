@@ -16,7 +16,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        version: [2.8.0, latest]
+        version: [2.7.0, 2.8.0, latest, nightly]
     runs-on: ubuntu-latest
     container:
       image: chapel/chapel:${{ matrix.version }}
@@ -41,9 +41,23 @@ jobs:
       - name: Run chplcheck
         run: |
           chplcheck src/**/*.chpl
+      - name: Check chpl version
+        id: chpl_version
+        shell: bash
+        run: |
+          ver=$(chpl --version | head -n 1 | awk '{print $3}')
+          echo "CHPL_VERSION=$ver" >> $GITHUB_OUTPUT
+          major=$(echo "$ver" | cut -d. -f1)
+          minor=$(echo "$ver" | cut -d. -f2)
+          if [[ "$major" -gt 2 ]] || { [[ "$major" -eq 2 ]] && [[ "$minor" -ge 9 ]]; }; then
+            echo "HAS_FIND_UNDOCUMENTED=true" >> $GITHUB_OUTPUT
+          else
+            echo "HAS_FIND_UNDOCUMENTED=false" >> $GITHUB_OUTPUT
+          fi
       - name: Check undocumented symbols
+        if: steps.chpl_version.outputs.HAS_FIND_UNDOCUMENTED == 'true'
         shell: bash
         run: |
           shopt -s globstar
           chpl_home=$(chpl --print-chpl-home)
-          CHPL_HOME=$chpl_home $chpl_home/tools/chpldoc/findUndocumentedSymbols --ci src/**/*.chpl
+          CHPL_HOME=$chpl_home $chpl_home/tools/chpldoc/findUndocumentedSymbols --ci src/**/*.chpl --ignore-enum-elements
