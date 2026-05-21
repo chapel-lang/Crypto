@@ -22,6 +22,10 @@ jobs:
       image: chapel/chapel:${{ matrix.version }}
     steps:
       - uses: actions/checkout@v4
+      - name: Install openssl
+        run: |
+          apt-get update
+          apt-get install -y libssl-dev
       - name: Check the project builds
         run: |
           mason build
