@@ -39,6 +39,8 @@ jobs:
         run: |
           mason test --show --parallel
       - name: Run chplcheck
+        # chplcheck has a bug on 2.7
+        if: matrix.version != '2.7.0'
         run: |
           chplcheck src/**/*.chpl
       - name: Check chpl version

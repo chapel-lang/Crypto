@@ -78,9 +78,10 @@ module Crypto {
    return localKeyPair;
   }
 
-  /* The `BaseCryptoBuffer` class is a wrapper around the internal representation
-     of how the values in this library are stored. Every sequence of bytes going
-     into a Crypto utility or coming out of it is a `BaseCryptoBuffer`.
+  /* The `BaseCryptoBuffer` class is a wrapper around the internal
+     representation of how the values in this library are stored. Every
+     sequence of bytes going into a Crypto utility or coming out of it is a
+     `BaseCryptoBuffer`.
 
      A `BaseCryptoBuffer` can enclose a `string`, `bytes`, or `[] uint(8)`
      passed to its initializer and provides helper functions to access
