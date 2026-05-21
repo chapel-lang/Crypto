@@ -2,7 +2,7 @@
 [brick]
 name = "Crypto"
 version = "0.1.0"
-chplVersion = "2.8.0"
+chplVersion = "2.7.0"
 type = "library"
 source = "https://github.com/chapel-lang/Crypto"
 authors = ["HPE", "Jade Abraham"]
