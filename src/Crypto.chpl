@@ -78,6 +78,18 @@ module Crypto {
    return localKeyPair;
   }
 
+  /* The `BaseCryptoBuffer` class is a wrapper around the internal representation
+     of how the values in this library are stored. Every sequence of bytes going
+     into a Crypto utility or coming out of it is a `BaseCryptoBuffer`.
+
+     A `BaseCryptoBuffer` can enclose a `string`, `bytes`, or `[] uint(8)`
+     passed to its initializer and provides helper functions to access
+     those values.
+
+     `BaseCryptoBuffer` should not be instantiated directtly, instead, use
+     the :class:`CryptoBuffer` or :class:`LocalBorrowedCryptoBuffer` classes
+     that inherit from it.
+  */
   class BaseCryptoBuffer {
 
     @chpldoc.nodoc
@@ -150,13 +162,11 @@ module Crypto {
     }
   }
 
-  /* The `CryptoBuffer` class is a wrapper around the internal representation
-     of how the values in this library are stored. Every sequence of bytes going
-     into a Crypto utility or coming out of it is a `CryptoBuffer`.
-
-     A `CryptoBuffer` can enclose a `string`, `bytes`, or `[] uint(8)`
-     passed to its initializer and provides helper functions to access
-     those values.
+  /*
+    A `CryptoBuffer` inherits from :class:`BaseCryptoBuffer` and provides the
+    actual implementation of the buffer representation and the utility
+    functions to access the buffer. This buffer is an owning buffer and creates
+    a copy of the input data passed to it during initialization.
   */
   class CryptoBuffer: BaseCryptoBuffer {
     @chpldoc.nodoc
@@ -263,6 +273,20 @@ module Crypto {
     }
   }
 
+  /*
+    A `LocalBorrowedCryptoBuffer` inherits from :class:`BaseCryptoBuffer` and
+    provides the actual implementation of the buffer representation and the
+    utility functions to access the buffer. This buffer is a non-owning buffer
+    and borrows the input data passed to it during initialization. Hence, it
+    does not create a copy of the input data and instead directly points to it.
+    The actual object that owns the data should ensure that the data is not
+    deallocated while it is being borrowed by an object of this class.
+
+    This buffer is for use within a single locale only. Attempting to
+    initialize it with data stored on another locale or attemping to use the
+    buffer from a different locale from the one it was created on will lead to
+    crashes.
+  */
   class LocalBorrowedCryptoBuffer: BaseCryptoBuffer {
     @chpldoc.nodoc
     var _len: int = 0;
@@ -540,7 +564,6 @@ module Crypto {
   /* The `Digest` enum represents all the hashing functions provided by the
      OpenSSL primitives. Value from this enum is passed to the `Hash` class
      initializer in order to select the type of hashing function to be used.
-
   */
   enum Digest {
     MD5, SHA1, SHA224, SHA256, SHA384, SHA512, RIPEMD160
@@ -638,19 +661,37 @@ module Crypto {
     @chpldoc.nodoc
     var obj: digestPrimitives;
 
+    @chpldoc.nodoc
     proc init(digestName: Digest) {
       super.init(digestName);
       this.obj = digestPrimitives.create(this.digestName, this.hashLen);
     }
 
+    /*
+      Add a chunk of data to the hash object. This function can be called
+      multiple times with different chunks of data to be hashed. The input
+      buffer can be of any size and the function will process it accordingly.
+    */
     proc update(inputBuffer: borrowed BaseCryptoBuffer) {
       this.obj.update(inputBuffer);
     }
+    /*
+      Finalize the hash computation and return the hash digest as a
+      `CryptoBuffer`. This function should be called after all the chunks of
+      data have been processed using the :proc:`update` function. It will
+      return the final hash digest based on all the data that has been
+      processed.
+    */
     proc finish(): owned CryptoBuffer {
       this.hashSpace = this.obj.finish();
       var hashBuffer = new CryptoBuffer(this.hashSpace);
       return hashBuffer;
     }
+    /*
+      Reset the hash object to its initial state. This function can be used to
+      reuse the same `StreamingHash` object for hashing new data after a hash
+      computation has been completed.
+    */
     proc reset() {
       this.obj = digestPrimitives.create(this.digestName, this.hashLen);
     }
@@ -1304,84 +1345,127 @@ module Crypto {
 
     use CTypes;
 
+    /**/
     extern type EVP_PKEY_CTX;
+    /**/
     extern type EVP_PKEY;
+    /**/
     extern var EVP_PKEY_RSA: c_int;
 
+    /**/
     extern type EVP_PKEY_CTX_PTR = c_ptr(EVP_PKEY_CTX);
+    /**/
     extern type EVP_PKEY_PTR = c_ptr(EVP_PKEY);
+    /**/
     extern type CONST_EVP_MD_PTR;
+    /**/
     extern type CONST_EVP_CIPHER_PTR;
 
+    /**/
     extern type EVP_MD;
+    /**/
     extern type EVP_MD_CTX;
+    /**/
     extern type CHPL_EVP_MD_CTX;
+    /**/
     extern type ENGINE;
 
+    /**/
     type EVP_MD_PTR = c_ptr(EVP_MD);
+    /**/
     type EVP_MD_CTX_PTR = c_ptr(EVP_MD_CTX);
+    /**/
     type ENGINE_PTR = c_ptr(ENGINE);
 
+    /**/
     extern type EVP_CIPHER;
+    /**/
     extern type EVP_CIPHER_CTX;
+    /**/
     extern type CHPL_EVP_CIPHER_CTX;
 
+    /**/
     type EVP_CIPHER_PTR = c_ptr(EVP_CIPHER);
+    /**/
     type EVP_CIPHER_CTX_PTR = c_ptr(EVP_CIPHER_CTX);
 
+    /**/
     extern proc EVP_CIPHER_iv_length(e: CONST_EVP_CIPHER_PTR): c_int;
+    /**/
     extern proc EVP_PKEY_size(pkey: EVP_PKEY_PTR): c_int;
+    /**/
     extern proc EVP_PKEY_CTX_new_id(id: c_int, e: ENGINE_PTR): EVP_PKEY_CTX_PTR;
+    /**/
     extern proc EVP_PKEY_keygen_init(ctx: EVP_PKEY_CTX_PTR): c_int;
+    /**/
     extern proc EVP_PKEY_CTX_set_rsa_keygen_bits(ctx: EVP_PKEY_CTX_PTR,
                                                  mbits: c_int): c_int;
+    /**/
     extern proc EVP_PKEY_keygen(ctx: EVP_PKEY_CTX_PTR,
                                 ref ppkey: EVP_PKEY_PTR): c_int;
+    /**/
     extern proc EVP_PKEY_CTX_free(ctx: EVP_PKEY_CTX_PTR);
 
+    /**/
     extern proc EVP_SealInit(ref ctx: EVP_CIPHER_CTX,
                              types: CONST_EVP_CIPHER_PTR,
                              ek: c_ptr(c_ptr(c_uchar)), ekl: c_ptr(c_int),
                              iv: c_ptr(c_uchar), pubk: c_ptr(EVP_PKEY_PTR),
                              npubk: c_int): c_int;
+    /**/
     extern proc EVP_SealUpdate(ref ctx: EVP_CIPHER_CTX, outm: c_ptr(c_uchar),
                                outl: c_ptr(c_int), inp: c_ptr(c_uchar),
                                inl: c_int): c_int;
+    /**/
     extern proc EVP_SealFinal(ref ctx: EVP_CIPHER_CTX,
                               outm: c_ptr(c_uchar), outl: c_ptr(c_int)): c_int;
 
+    /**/
     extern proc EVP_OpenInit(ref ctx: EVP_CIPHER_CTX,
                              types: CONST_EVP_CIPHER_PTR,
                              ek: c_ptr(c_uchar), ekl: c_int, iv: c_ptr(c_uchar),
                              priv: EVP_PKEY_PTR): c_int;
+    /**/
     extern proc EVP_OpenUpdate(ref ctx: EVP_CIPHER_CTX, outm: c_ptr(c_uchar),
                                outl: c_ptr(c_int), inp: c_ptr(c_uchar),
                                inl: c_int): c_int;
+    /**/
     extern proc EVP_OpenFinal(ref ctx: EVP_CIPHER_CTX,
                               outm: c_ptr(c_uchar), outl: c_ptr(c_int)): c_int;
 
+    /**/
     extern proc CHPL_OpenSSL_add_all_digests();
+    /**/
     extern proc EVP_get_digestbyname(
       name: c_ptrConst(c_char)
     ): CONST_EVP_MD_PTR;
 
+    /**/
     extern proc CHPL_EVP_MD_CTX_new(): CHPL_EVP_MD_CTX;
+    /**/
     extern proc CHPL_EVP_MD_CTX_free(ref c: CHPL_EVP_MD_CTX);
+    /**/
     extern proc CHPL_EVP_MD_CTX_ptr(ref c: CHPL_EVP_MD_CTX):EVP_MD_CTX_PTR;
+    /**/
     extern proc EVP_DigestInit_ex(ctx: EVP_MD_CTX_PTR,
                                   types: CONST_EVP_MD_PTR,
                                   impl: ENGINE_PTR): c_int;
+    /**/
     extern proc EVP_DigestUpdate(ctx: EVP_MD_CTX_PTR,
                                  const d: c_ptr(void),
                                  cnt: c_size_t): c_int;
+    /**/
     extern proc EVP_DigestFinal_ex(ctx: EVP_MD_CTX_PTR,
                                    md: c_ptr(c_uchar),
                                    ref s: c_uint): c_int;
 
+    /**/
     extern proc RAND_bytes(buf: c_ptr(c_uchar), num: c_int) : c_int;
 
+    /**/
     extern proc EVP_sha256(): CONST_EVP_MD_PTR;
 
+    /**/
     extern proc PKCS5_PBKDF2_HMAC(pass: c_ptrConst(c_char),
                                   passlen: c_int,
                                   const salt: c_ptr(c_uchar),
@@ -1392,55 +1476,81 @@ module Crypto {
                                   outx: c_ptr(c_uchar)): c_int;
 
 
+    /**/
     extern proc CHPL_EVP_CIPHER_CTX_new(): CHPL_EVP_CIPHER_CTX;
+    /**/
     extern proc CHPL_EVP_CIPHER_CTX_free(ref c: CHPL_EVP_CIPHER_CTX);
+    /**/
     extern proc CHPL_EVP_CIPHER_CTX_ptr(
       ref c: CHPL_EVP_CIPHER_CTX
     ):EVP_CIPHER_CTX_PTR;
+    /**/
     extern proc EVP_EncryptInit_ex(ctx: EVP_CIPHER_CTX_PTR,
                                   cipher: CONST_EVP_CIPHER_PTR,
                                   impl: ENGINE_PTR,
                                   const key: c_ptr(c_uchar),
                                   const iv: c_ptr(c_uchar)): c_int;
+    /**/
     extern proc EVP_EncryptUpdate(ctx: EVP_CIPHER_CTX_PTR,
                                   outm: c_ptr(c_uchar),
                                   outl: c_ptr(c_int),
                                   const ins: c_ptr(c_uchar),
                                   inl: c_int): c_int;
+    /**/
     extern proc EVP_EncryptFinal_ex(ctx: EVP_CIPHER_CTX_PTR,
                                     outm: c_ptr(c_uchar),
                                     outl: c_ptr(c_int)): c_int;
+    /**/
     extern proc EVP_DecryptInit_ex(ctx: EVP_CIPHER_CTX_PTR,
                                   cipher: CONST_EVP_CIPHER_PTR,
                                   impl: ENGINE_PTR,
                                   const key: c_ptr(c_uchar),
                                   const iv: c_ptr(c_uchar)): c_int;
+    /**/
     extern proc EVP_DecryptUpdate(ctx: EVP_CIPHER_CTX_PTR,
                                   outm: c_ptr(c_uchar),
                                   outl: c_ptr(c_int),
                                   const ins: c_ptr(c_uchar),
                                   inl: c_int): c_int;
+    /**/
     extern proc EVP_DecryptFinal_ex(ctx: EVP_CIPHER_CTX_PTR,
                                     outm: c_ptr(c_uchar),
                                     outl: c_ptr(c_int)): c_int;
 
+    /**/
     extern proc EVP_aes_128_cbc(): CONST_EVP_CIPHER_PTR;
+    /**/
     extern proc EVP_aes_128_ecb(): CONST_EVP_CIPHER_PTR;
+    /**/
     extern proc EVP_aes_128_cfb(): CONST_EVP_CIPHER_PTR;
+    /**/
     extern proc EVP_aes_128_ofb(): CONST_EVP_CIPHER_PTR;
+    /**/
     extern proc EVP_aes_192_cbc(): CONST_EVP_CIPHER_PTR;
+    /**/
     extern proc EVP_aes_192_ecb(): CONST_EVP_CIPHER_PTR;
+    /**/
     extern proc EVP_aes_192_cfb(): CONST_EVP_CIPHER_PTR;
+    /**/
     extern proc EVP_aes_192_ofb(): CONST_EVP_CIPHER_PTR;
+    /**/
     extern proc EVP_aes_256_cbc(): CONST_EVP_CIPHER_PTR;
+    /**/
     extern proc EVP_aes_256_ecb(): CONST_EVP_CIPHER_PTR;
+    /**/
     extern proc EVP_aes_256_cfb(): CONST_EVP_CIPHER_PTR;
+    /**/
     extern proc EVP_aes_256_ofb(): CONST_EVP_CIPHER_PTR;
+    /**/
     extern proc EVP_bf_cbc(): CONST_EVP_CIPHER_PTR;
+    /**/
     extern proc EVP_bf_ecb(): CONST_EVP_CIPHER_PTR;
+    /**/
     extern proc EVP_bf_cfb(): CONST_EVP_CIPHER_PTR;
+    /**/
     extern proc EVP_bf_ofb(): CONST_EVP_CIPHER_PTR;
 
+    /**/
     extern proc RAND_seed(const buf: c_ptr(void), num: c_int);
   }
 
