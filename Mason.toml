@@ -1,0 +1,15 @@
+
+[brick]
+name = "Crypto"
+version = "0.1.0"
+chplVersion = "2.8.0"
+type = "library"
+source = "https://github.com/chapel-lang/Crypto"
+authors = ["HPE", "Jade Abraham"]
+copyrightYear = "2004"
+license = "Apache-2.0"
+
+[dependencies]
+
+[system]
+openssl = "*"
