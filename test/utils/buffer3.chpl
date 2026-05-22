@@ -27,7 +27,8 @@ proc runCheck(args, expectedOutput: string) {
       env=getEnvs(["CHPL_RT_UNWIND=0"],
                   ["GASNET_SPAWNFN", "GASNET_ROUTE_OUTPUT",
                     "GASNET_QUIET", "GASNET_MASTERIP",
-                    "GASNET_WORKERIP", "CHPL_RT_OVERSUBSCRIBED"]));
+                    "GASNET_WORKERIP", "CHPL_RT_OVERSUBSCRIBED",
+                    "LD_LIBRARY_PATH", "DYLD_LIBRARY_PATH"]));
   p.wait();
   var stdout, stderr: string;
   p.stdout.readAll(stdout);
